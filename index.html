@@ -323,7 +323,7 @@
         // Mobile scroll-focus: zoom the card closest to viewport center
         const donationCards = document.querySelectorAll('.donation-card');
         let currentFocusedCard = null;
-        const HYSTERESIS = 30; // px dead zone to prevent flickering at boundary
+        const HYSTERESIS = 60; // px dead zone to prevent flickering at boundary
 
         function updateFocusedCard() {
             if (!isMobile()) {
@@ -335,7 +335,7 @@
             // If user scrolled near the bottom of the page, force focus the last card
             // (last card can never reach viewport center because there's no content below it)
             const distFromBottom = document.documentElement.scrollHeight - window.scrollY - window.innerHeight;
-            if (distFromBottom < 80) {
+            if (distFromBottom < 200) {
                 const lastCard = donationCards[donationCards.length - 1];
                 if (currentFocusedCard !== lastCard) {
                     currentFocusedCard = lastCard;
