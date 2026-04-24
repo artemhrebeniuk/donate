@@ -112,30 +112,22 @@
             }
         }
 
-        @media (max-height: 720px) {
-            body {
-                padding-top: 1.5rem !important;
+        /* Mobile scroll-focus: card closest to screen center gets zoomed */
+        @media (max-width: 768px) {
+            .donation-card {
+                transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                    opacity 0.4s ease,
+                    border-color 0.4s ease,
+                    background-color 0.4s ease;
+                opacity: 0.6;
+                transform: scale(0.97);
             }
 
-            .header-section {
-                margin-bottom: 1rem !important;
-            }
-
-            .logo-container {
-                width: 4rem !important;
-                height: 4rem !important;
-            }
-
-            .main-title {
-                font-size: 2rem !important;
-            }
-
-            .card-padding {
-                padding: 1rem 1.5rem !important;
-            }
-
-            .card-gap {
-                gap: 1rem !important;
+            .donation-card.card-focused {
+                opacity: 1;
+                transform: scale(1.03);
+                border-color: rgba(255, 255, 255, 0.25) !important;
+                background-color: rgba(255, 255, 255, 0.06) !important;
             }
         }
     </style>
@@ -163,8 +155,8 @@
         <!-- Donation Options Grid -->
         <section class="flex flex-col gap-6 card-gap">
             <!-- Monobank Card -->
-            <div
-                class="bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-2xl p-8 card-padding flex flex-col md:flex-row items-center md:justify-between group hover:bg-white/[0.06] hover:border-white/20 hover:scale-[1.02] transition-all duration-500 ease-out shadow-[0_8px_32px_rgba(0,0,0,0.5)] relative">
+            <div id="card-monobank"
+                class="donation-card bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-2xl p-8 card-padding flex flex-col md:flex-row items-center md:justify-between group hover:bg-white/[0.06] hover:border-white/20 hover:scale-[1.02] transition-all duration-500 ease-out shadow-[0_8px_32px_rgba(0,0,0,0.5)] relative">
                 <div class="noise-overlay"></div>
                 <div
                     class="flex items-center flex-col md:flex-row gap-6 relative z-10 w-full md:w-auto text-center md:text-left mb-6 md:mb-0">
@@ -184,8 +176,8 @@
                 </a>
             </div>
             <!-- Ko-fi Card -->
-            <div
-                class="bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-2xl p-8 card-padding flex flex-col md:flex-row items-center md:justify-between group hover:bg-white/[0.06] hover:border-white/20 hover:scale-[1.02] transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.5)] relative">
+            <div id="card-kofi"
+                class="donation-card bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-2xl p-8 card-padding flex flex-col md:flex-row items-center md:justify-between group hover:bg-white/[0.06] hover:border-white/20 hover:scale-[1.02] transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.5)] relative">
                 <div class="noise-overlay"></div>
                 <div
                     class="flex items-center flex-col md:flex-row gap-6 relative z-10 w-full md:w-auto text-center md:text-left mb-6 md:mb-0">
@@ -205,8 +197,8 @@
                 </a>
             </div>
             <!-- Crypto Card -->
-            <div
-                class="bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-2xl p-8 card-padding flex flex-col md:flex-row items-center md:justify-between group hover:bg-white/[0.06] hover:border-white/20 hover:scale-[1.02] transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.5)] relative">
+            <div id="card-crypto"
+                class="donation-card bg-white/[0.03] backdrop-blur-2xl border border-white/10 rounded-2xl p-8 card-padding flex flex-col md:flex-row items-center md:justify-between group hover:bg-white/[0.06] hover:border-white/20 hover:scale-[1.02] transition-all duration-300 shadow-[0_8px_32px_rgba(0,0,0,0.5)] relative">
                 <div class="noise-overlay"></div>
                 <div
                     class="flex items-center flex-col md:flex-row gap-6 relative z-10 w-full md:w-auto text-center md:text-left mb-6 md:mb-0">
@@ -306,6 +298,43 @@
 
         window.addEventListener('resize', handleResize);
         handleResize();
+
+        // Mobile scroll-focus: zoom the card closest to viewport center
+        const donationCards = document.querySelectorAll('.donation-card');
+
+        function updateFocusedCard() {
+            if (!isMobile()) {
+                // Remove all focus on desktop
+                donationCards.forEach(c => c.classList.remove('card-focused'));
+                return;
+            }
+            const viewportCenter = window.innerHeight / 2;
+            let closestCard = null;
+            let closestDist = Infinity;
+
+            donationCards.forEach(card => {
+                const rect = card.getBoundingClientRect();
+                const cardCenter = rect.top + rect.height / 2;
+                const dist = Math.abs(cardCenter - viewportCenter);
+                if (dist < closestDist) {
+                    closestDist = dist;
+                    closestCard = card;
+                }
+            });
+
+            donationCards.forEach(card => {
+                if (card === closestCard) {
+                    card.classList.add('card-focused');
+                } else {
+                    card.classList.remove('card-focused');
+                }
+            });
+        }
+
+        window.addEventListener('scroll', updateFocusedCard, { passive: true });
+        window.addEventListener('resize', updateFocusedCard);
+        // Run once on load
+        updateFocusedCard();
 
         const copyBtn = document.getElementById('copy-usdt');
         const copyText = document.getElementById('copy-text');
