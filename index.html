@@ -301,17 +301,35 @@
 
         // Mobile scroll-focus: zoom the card closest to viewport center
         const donationCards = document.querySelectorAll('.donation-card');
+        let currentFocusedCard = null;
+        const HYSTERESIS = 30; // px dead zone to prevent flickering at boundary
 
         function updateFocusedCard() {
             if (!isMobile()) {
-                // Remove all focus on desktop
                 donationCards.forEach(c => c.classList.remove('card-focused'));
+                currentFocusedCard = null;
                 return;
             }
+
+            // If user scrolled near the bottom of the page, force focus the last card
+            // (last card can never reach viewport center because there's no content below it)
+            const distFromBottom = document.documentElement.scrollHeight - window.scrollY - window.innerHeight;
+            if (distFromBottom < 80) {
+                const lastCard = donationCards[donationCards.length - 1];
+                if (currentFocusedCard !== lastCard) {
+                    currentFocusedCard = lastCard;
+                    donationCards.forEach(card => {
+                        card.classList.toggle('card-focused', card === lastCard);
+                    });
+                }
+                return;
+            }
+
             const viewportCenter = window.innerHeight / 2;
+
+            // Find the closest card and its distance
             let closestCard = null;
             let closestDist = Infinity;
-
             donationCards.forEach(card => {
                 const rect = card.getBoundingClientRect();
                 const cardCenter = rect.top + rect.height / 2;
@@ -322,13 +340,24 @@
                 }
             });
 
-            donationCards.forEach(card => {
-                if (card === closestCard) {
-                    card.classList.add('card-focused');
-                } else {
-                    card.classList.remove('card-focused');
+            // Only switch if the current winner is closer by more than HYSTERESIS
+            // relative to the currently focused card (prevents rapid switching)
+            if (currentFocusedCard && currentFocusedCard !== closestCard) {
+                const currentRect = currentFocusedCard.getBoundingClientRect();
+                const currentCenter = currentRect.top + currentRect.height / 2;
+                const currentDist = Math.abs(currentCenter - viewportCenter);
+                // Only switch if the new card is meaningfully closer
+                if (currentDist - closestDist < HYSTERESIS) {
+                    return; // Stay with current card, not worth switching yet
                 }
-            });
+            }
+
+            if (currentFocusedCard !== closestCard) {
+                currentFocusedCard = closestCard;
+                donationCards.forEach(card => {
+                    card.classList.toggle('card-focused', card === closestCard);
+                });
+            }
         }
 
         window.addEventListener('scroll', updateFocusedCard, { passive: true });
